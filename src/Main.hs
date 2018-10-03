@@ -41,7 +41,7 @@ getUser userName = return $ User { name = userName
                                  , points = 100
                                  }
 
--- TODO: chargeUser is not implemented
+-- TODO(#3): chargeUser is not implemented
 chargeUser :: Charge -> Handler User
 chargeUser charge = return $ User { name = userName charge
                                   , points = 100 - amount charge
