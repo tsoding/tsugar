@@ -26,7 +26,7 @@ instance ToJSON User
 instance FromJSON Charge
 
 type TsugarAPI = "user" :> Capture "name" T.Text :> Get '[JSON] User
-            -- TODO: charge endpoint requires an authentication for the clients
+            -- TODO(#1): charge endpoint requires an authentication for the clients
             :<|> "charge" :> ReqBody '[JSON] Charge :> Post '[JSON] User
 
 tsugarAPI :: Proxy TsugarAPI
