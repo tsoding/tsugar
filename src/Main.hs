@@ -32,7 +32,7 @@ type TsugarAPI = "user" :> Capture "name" T.Text :> Get '[JSON] User
 tsugarAPI :: Proxy TsugarAPI
 tsugarAPI = Proxy
 
--- TODO: getUser is not implemented
+-- TODO(#2): getUser is not implemented
 getUser :: T.Text -> Handler User
 getUser "bpaf" = return $ User { name = "bpaf"
                                , points = 0
