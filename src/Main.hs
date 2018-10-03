@@ -34,9 +34,6 @@ tsugarAPI = Proxy
 
 -- TODO(#2): getUser is not implemented
 getUser :: T.Text -> Handler User
-getUser "bpaf" = return $ User { name = "bpaf"
-                               , points = 0
-                               }
 getUser userName = return $ User { name = userName
                                  , points = 100
                                  }
