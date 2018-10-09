@@ -51,7 +51,7 @@ type TsugarAPI = "user" :> Capture "name" T.Text :> Get '[JSON] User
 tsugarAPI :: Proxy TsugarAPI
 tsugarAPI = Proxy
 
--- TODO: getUserByName is not implemented
+-- TODO(#9): getUserByName is not implemented
 getUserByName :: Connection -> T.Text -> IO (Maybe User)
 getUserByName _ _ = return Nothing
 
