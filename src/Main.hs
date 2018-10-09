@@ -75,7 +75,7 @@ mainWithArgs (pgUrl:_) = do
   -- TODO(#11): PostgreSQL connection is not automatically closed
   conn <- connectPostgreSQL $ BS.pack pgUrl
   migrateDatabase conn []
-  -- TODO: Server port is hardcoded
+  -- TODO(#12): Server port is hardcoded
   run 3000 $ serve tsugarAPI (server conn)
 mainWithArgs _ = do
   hPutStrLn stderr "Usage: tsugar <postgres-url>"
