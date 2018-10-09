@@ -7,13 +7,19 @@ module Main where
 
 import           Data.Aeson
 import           Data.Aeson.Types
+import qualified Data.ByteString.Char8 as BS
 import           Data.Proxy
 import qualified Data.Text as T
 import           Data.Time.Calendar
+import           Database.PostgreSQL.Simple
 import           GHC.Generics
+import           Migrations
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Servant
+import           System.Environment
+import           System.IO
+import           System.Exit
 
 data User = User { userName :: T.Text
                  , userPoints :: Int
@@ -58,5 +64,15 @@ chargeUserEndpoint charge =
 server :: Server TsugarAPI
 server = getUserEndpoint :<|> chargeUserEndpoint
 
+mainWithArgs :: [String] -> IO ()
+mainWithArgs (pgUrl:_) = do
+  -- TODO: pgUrl should be stored in a config file
+  conn <- connectPostgreSQL $ BS.pack pgUrl
+  migrateDatabase conn [ "CREATE TABLE FOO ()" ]
+  run 3000 $ serve tsugarAPI server
+mainWithArgs _ = do
+  hPutStrLn stderr "Usage: tsugar <postgres-url>"
+  exitWith $ ExitFailure 1
+
 main :: IO ()
-main = run 3000 $ serve tsugarAPI server
+main = getArgs >>= mainWithArgs
