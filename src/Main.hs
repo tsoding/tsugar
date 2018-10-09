@@ -72,7 +72,7 @@ server conn = getUserEndpoint conn :<|> chargeUserEndpoint
 mainWithArgs :: [String] -> IO ()
 mainWithArgs (pgUrl:_) = do
   -- TODO(#10): pgUrl should be stored in a config file
-  -- TODO: PostgreSQL connection is not automatically closed
+  -- TODO(#11): PostgreSQL connection is not automatically closed
   conn <- connectPostgreSQL $ BS.pack pgUrl
   migrateDatabase conn []
   -- TODO: Server port is hardcoded
