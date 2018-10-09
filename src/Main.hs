@@ -5,15 +5,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Except
 import           Data.Aeson
 import           Data.Aeson.Types
+import qualified Data.ByteString.Char8 as BS
+import           Data.Maybe
 import           Data.Proxy
 import qualified Data.Text as T
 import           Data.Time.Calendar
+import           Database.PostgreSQL.Simple
 import           GHC.Generics
+import           Migrations
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Servant
+import           System.Environment
+import           System.Exit
+import           System.IO
 
 data User = User { userName :: T.Text
                  , userPoints :: Int
@@ -42,11 +51,13 @@ type TsugarAPI = "user" :> Capture "name" T.Text :> Get '[JSON] User
 tsugarAPI :: Proxy TsugarAPI
 tsugarAPI = Proxy
 
--- TODO(#2): getUser is not implemented
-getUserEndpoint :: T.Text -> Handler User
-getUserEndpoint name = return $ User { userName = name
-                                     , userPoints = 100
-                                     }
+-- TODO(#9): getUserByName is not implemented
+getUserByName :: Connection -> T.Text -> IO (Maybe User)
+getUserByName _ _ = return Nothing
+
+getUserEndpoint :: Connection -> T.Text -> Handler User
+getUserEndpoint conn name =
+    (liftIO $ getUserByName conn name) >>= maybe (Handler $ throwE err404) return
 
 -- TODO(#3): chargeUser is not implemented
 chargeUserEndpoint :: Charge -> Handler User
@@ -55,8 +66,20 @@ chargeUserEndpoint charge =
                   , userPoints = 100 - chargeAmount charge
                   }
 
-server :: Server TsugarAPI
-server = getUserEndpoint :<|> chargeUserEndpoint
+server :: Connection -> Server TsugarAPI
+server conn = getUserEndpoint conn :<|> chargeUserEndpoint
+
+mainWithArgs :: [String] -> IO ()
+mainWithArgs (pgUrl:_) = do
+  -- TODO(#10): pgUrl should be stored in a config file
+  -- TODO(#11): PostgreSQL connection is not automatically closed
+  conn <- connectPostgreSQL $ BS.pack pgUrl
+  migrateDatabase conn []
+  -- TODO(#12): Server port is hardcoded
+  run 3000 $ serve tsugarAPI (server conn)
+mainWithArgs _ = do
+  hPutStrLn stderr "Usage: tsugar <postgres-url>"
+  exitWith $ ExitFailure 1
 
 main :: IO ()
-main = run 3000 $ serve tsugarAPI server
+main = getArgs >>= mainWithArgs
