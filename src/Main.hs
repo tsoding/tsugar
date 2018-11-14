@@ -25,6 +25,7 @@ import           System.Exit
 import           System.IO
 import           Config
 import           Text.Printf
+import           Control.Exception (bracket)
 
 data User = User { userName :: T.Text
                  , userPoints :: Int
@@ -76,10 +77,10 @@ mainWithArgs :: [String] -> IO ()
 mainWithArgs (configPath:_) = do
   Config {configPgUrl = pgUrl, configHttpPort = port} <-
     configFromFile configPath
-  conn <- connectPostgreSQL $ BS.pack pgUrl
-  migrateDatabase conn []
-  printf "Serving http://localhost:%d/\n" port
-  run port $ serve tsugarAPI (server conn)
+  bracket (connectPostgreSQL $ BS.pack pgUrl) close $ \conn -> do
+    migrateDatabase conn []
+    printf "Serving http://localhost:%d/\n" port
+    run port $ serve tsugarAPI (server conn)
 mainWithArgs _ = do
   hPutStrLn stderr "Usage: tsugar <config-file-path>"
   exitWith $ ExitFailure 1
