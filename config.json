@@ -1,0 +1,4 @@
+{
+    "pgUrl": "postgres://postgres:mysecretpassword@localhost:5432/postgres",
+    "httpPort": 3000
+}
