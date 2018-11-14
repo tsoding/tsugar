@@ -23,6 +23,8 @@ import           Servant
 import           System.Environment
 import           System.Exit
 import           System.IO
+import           Config
+import           Text.Printf
 
 data User = User { userName :: T.Text
                  , userPoints :: Int
@@ -69,15 +71,17 @@ chargeUserEndpoint charge =
 server :: Connection -> Server TsugarAPI
 server conn = getUserEndpoint conn :<|> chargeUserEndpoint
 
+-- TODO(#11): PostgreSQL connection is not automatically closed
 mainWithArgs :: [String] -> IO ()
-mainWithArgs (pgUrl:_) = do
-  -- TODO(#11): PostgreSQL connection is not automatically closed
+mainWithArgs (configPath:_) = do
+  Config {configPgUrl = pgUrl, configHttpPort = port} <-
+    configFromFile configPath
   conn <- connectPostgreSQL $ BS.pack pgUrl
   migrateDatabase conn []
-  -- TODO(#12): Server port is hardcoded
-  run 3000 $ serve tsugarAPI (server conn)
+  printf "Serving http://localhost:%d/\n" port
+  run port $ serve tsugarAPI (server conn)
 mainWithArgs _ = do
-  hPutStrLn stderr "Usage: tsugar <postgres-url>"
+  hPutStrLn stderr "Usage: tsugar <config-file-path>"
   exitWith $ ExitFailure 1
 
 main :: IO ()
