@@ -6,7 +6,7 @@ import Data.Aeson
 import Data.Aeson.Types
 import qualified Data.ByteString.Lazy as BS
 
-data Config = Config { configPgUrl :: T.Text
+data Config = Config { configPgUrl :: String
                      , configHttpPort :: Int
                      } deriving (Eq, Show)
 
