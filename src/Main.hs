@@ -24,6 +24,7 @@ import           System.Environment
 import           System.Exit
 import           System.IO
 import           Config
+import           Text.Printf
 
 data User = User { userName :: T.Text
                  , userPoints :: Int
@@ -77,6 +78,7 @@ mainWithArgs (configPath:_) = do
     configFromFile configPath
   conn <- connectPostgreSQL $ BS.pack pgUrl
   migrateDatabase conn []
+  printf "Serving http://localhost:%d/\n" port
   run port $ serve tsugarAPI (server conn)
 mainWithArgs _ = do
   hPutStrLn stderr "Usage: tsugar <config-file-path>"
