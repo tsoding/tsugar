@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 module Main where
 
 import           Control.Monad.IO.Class
@@ -26,6 +27,7 @@ import           System.IO
 import           Config
 import           Text.Printf
 import           Control.Exception (bracket)
+import           Text.InterpolatedString.QM
 
 data User = User { userName :: T.Text
                  , userPoints :: Int
@@ -72,12 +74,19 @@ chargeUserEndpoint charge =
 server :: Connection -> Server TsugarAPI
 server conn = getUserEndpoint conn :<|> chargeUserEndpoint
 
+migrations :: [Migration]
+migrations = [[qms|create table Users (
+                    id serial primary key,
+                    name varchar unique not null,
+                    points integer
+                  )|]]
+
 mainWithArgs :: [String] -> IO ()
 mainWithArgs (configPath:_) = do
   Config {configPgUrl = pgUrl, configHttpPort = port} <-
     configFromFile configPath
   bracket (connectPostgreSQL $ BS.pack pgUrl) close $ \conn -> do
-    migrateDatabase conn []
+    migrateDatabase conn migrations
     printf "Serving http://localhost:%d/\n" port
     run port $ serve tsugarAPI (server conn)
 mainWithArgs _ = do

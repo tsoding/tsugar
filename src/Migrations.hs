@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE DeriveAnyClass #-}
 module Migrations where
 
 import           Control.Monad
@@ -12,8 +13,16 @@ import           Database.PostgreSQL.Simple
 import           Database.PostgreSQL.Simple.FromRow
 import           Database.PostgreSQL.Simple.Types
 import           Text.InterpolatedString.QM
+import Data.Semigroup
+import Data.Monoid
 
 newtype Migration = Migration { migrationQuery :: Query } deriving Eq
+
+instance Semigroup Migration where
+    m1 <> m2 = Migration (migrationQuery m1 <> migrationQuery m2)
+
+instance Monoid Migration where
+    mempty = Migration $ mempty
 
 instance IsString Migration where
     fromString = Migration . fromString
