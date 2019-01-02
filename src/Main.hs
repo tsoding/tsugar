@@ -16,6 +16,7 @@ import           Data.Proxy
 import qualified Data.Text as T
 import           Data.Time.Calendar
 import           Database.PostgreSQL.Simple
+import           Database.PostgreSQL.Simple.FromRow
 import           GHC.Generics
 import           Migrations
 import           Network.Wai
@@ -37,6 +38,9 @@ data Charge = Charge { chargeUser :: T.Text
                      , chargeAmount :: Int
                      } deriving (Eq, Show, Generic)
 
+instance FromRow User where
+    fromRow = User <$> field <*> field
+
 instance ToJSON User where
     toJSON user =
         object [ "name" .= userName user
@@ -56,9 +60,15 @@ type TsugarAPI = "user" :> Capture "name" T.Text :> Get '[JSON] User
 tsugarAPI :: Proxy TsugarAPI
 tsugarAPI = Proxy
 
--- TODO(#9): getUserByName is not implemented
 getUserByName :: Connection -> T.Text -> IO (Maybe User)
-getUserByName _ _ = return Nothing
+getUserByName conn name = do
+  listToMaybe <$>
+    query
+      conn
+      [qms|select name, points
+           from Users
+           where name = ?;|]
+      (Only name)
 
 getUserEndpoint :: Connection -> T.Text -> Handler User
 getUserEndpoint conn name =
