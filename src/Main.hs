@@ -29,6 +29,7 @@ import           Config
 import           Text.Printf
 import           Control.Exception (bracket)
 import           Text.InterpolatedString.QM
+import           Control.Monad
 
 data User = User { userName :: T.Text
                  , userPoints :: Int
@@ -74,15 +75,27 @@ getUserEndpoint :: Connection -> T.Text -> Handler User
 getUserEndpoint conn name =
     (liftIO $ getUserByName conn name) >>= maybe (Handler $ throwE err404) return
 
--- TODO(#3): chargeUser is not implemented
-chargeUserEndpoint :: Charge -> Handler User
-chargeUserEndpoint charge =
-    return $ User { userName = chargeUser charge
-                  , userPoints = 100 - chargeAmount charge
-                  }
+updateUser :: Connection -> User -> IO ()
+updateUser conn user =
+  void $
+    execute
+      conn
+      [qms|update users set points = ? where name = ?|]
+      (userPoints user, userName user)
+
+chargeUserEndpoint :: Connection -> Charge -> Handler User
+chargeUserEndpoint conn charge = do
+  user <- liftIO $ getUserByName conn $ chargeUser charge
+  case user of
+    Just user' -> do
+      liftIO $
+        updateUser conn $
+        user' {userPoints = userPoints user' - chargeAmount charge}
+      return user'
+    Nothing -> Handler $ throwE err404
 
 server :: Connection -> Server TsugarAPI
-server conn = getUserEndpoint conn :<|> chargeUserEndpoint
+server conn = getUserEndpoint conn :<|> chargeUserEndpoint conn
 
 migrations :: [Migration]
 migrations = [[qms|create table Users (
