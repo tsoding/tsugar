@@ -72,7 +72,6 @@ chargeUserEndpoint charge =
 server :: Connection -> Server TsugarAPI
 server conn = getUserEndpoint conn :<|> chargeUserEndpoint
 
--- TODO(#11): PostgreSQL connection is not automatically closed
 mainWithArgs :: [String] -> IO ()
 mainWithArgs (configPath:_) = do
   Config {configPgUrl = pgUrl, configHttpPort = port} <-
